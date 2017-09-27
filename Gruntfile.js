@@ -3,6 +3,7 @@
 module.exports = function( grunt ) {
     var JS_INCLUDE = [ '**/*.js', '!node_modules/**', '!test/**/*.spec.js', '!public/js/*-bundle.js', '!public/js/*-bundle.min.js' ];
     var pkg = grunt.file.readJSON( 'package.json' );
+    var path = require( 'path' );
 
     require( 'time-grunt' )( grunt );
     require( 'load-grunt-tasks' )( grunt );
@@ -218,7 +219,7 @@ module.exports = function( grunt ) {
 
     grunt.registerTask( 'widgets', 'generate widget reference files', function() {
         var content;
-        var WIDGETS_JS_LOC = 'public/js/src/module/';
+        var WIDGETS_JS_LOC = 'public/js/';
         var WIDGETS_JS = WIDGETS_JS_LOC + 'widgets.js';
         var WIDGETS_SASS_LOC = 'app/views/styles/component/';
         var WIDGETS_SASS = WIDGETS_SASS_LOC + '_widgets.scss';
@@ -228,16 +229,16 @@ module.exports = function( grunt ) {
         var paths = Object.keys( widgets ).map( function( key ) {
             return coreWidgets[ widgets[ key ] ] || widgets[ key ];
         } );
-        grunt.log.writeln( 'widgets ' + widgets );
         content = PRE + '\'use strict\';\n\nmodule.exports = [\n    ' +
-            paths.map( function( path ) {
-                return grunt.file.exists( WIDGETS_JS_LOC, path + '.js' ) ? 'require( \'' + path + '\' )' : '//' + path + ' not found';
+            paths.map( function( p ) {
+                return grunt.file.exists( WIDGETS_JS_LOC, p + '.js' ) ? 'require( \'' + p + '\' )' : '//' + p + ' not found';
             } ).join( ',\n    ' ) + '\n];\n';
         grunt.file.write( WIDGETS_JS, content );
         grunt.log.writeln( 'File ' + WIDGETS_JS + ' created' );
         content = PRE +
-            paths.map( function( path ) {
-                return grunt.file.exists( WIDGETS_SASS_LOC, path + '.scss' ) ? '@import "' + path + '"' : '//' + path + ' not found';
+            paths.map( function( p ) {
+                p = path.join( '../../', p );
+                return grunt.file.exists( WIDGETS_SASS_LOC, p + '.scss' ) ? '@import "' + p + '"' : '//' + p + ' not found';
             } ).join( ';\n' ) + ';';
         grunt.file.write( WIDGETS_SASS, content );
         grunt.log.writeln( 'File ' + WIDGETS_SASS + ' created' );
