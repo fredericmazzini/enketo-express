@@ -229,10 +229,10 @@ module.exports = function( grunt ) {
             return coreWidgets[ widgets[ key ] ] || widgets[ key ];
         } );
         grunt.log.writeln( 'widgets ' + widgets );
-        content = PRE + '\'use strict\';\n\nmodule.exports = [\n\t' +
+        content = PRE + '\'use strict\';\n\nmodule.exports = [\n    ' +
             paths.map( function( path ) {
                 return grunt.file.exists( WIDGETS_JS_LOC, path + '.js' ) ? 'require( \'' + path + '\' )' : '//' + path + ' not found';
-            } ).join( ',\n\t' ) + '\n];';
+            } ).join( ',\n    ' ) + '\n];\n';
         grunt.file.write( WIDGETS_JS, content );
         grunt.log.writeln( 'File ' + WIDGETS_JS + ' created' );
         content = PRE +

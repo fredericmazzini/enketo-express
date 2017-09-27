@@ -279,10 +279,8 @@ if ( config[ 'base path' ] && config[ 'base path' ].lastIndexOf( '/' ) === confi
 module.exports = {
     server: config,
     client: {
-        widgets: config.widgets,
         googleApiKey: config.google[ 'api key' ],
         maps: config.maps,
-        widgets: config.widgets,
         modernBrowsersURL: 'modern-browsers',
         supportEmail: config.support.email,
         themesSupported: config[ 'themes supported' ],
