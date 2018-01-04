@@ -20,7 +20,7 @@ function getXFormInfo( survey ) {
     }
 
     return _request( {
-        url: getFormListUrl( survey.openRosaServer, survey.openRosaId ),
+        url: getFormListUrl( survey.openRosaServer, survey.openRosaId, survey.customParam ),
         auth: survey.credentials,
         headers: {
             cookie: survey.cookie
@@ -110,7 +110,7 @@ function getMaxSize( survey ) {
 
 function authenticate( survey ) {
     var options = {
-        url: getFormListUrl( survey.openRosaServer, survey.openRosaId ),
+        url: getFormListUrl( survey.openRosaServer, survey.openRosaId, survey.customParam ),
         auth: survey.credentials,
         headers: {
             cookie: survey.cookie
@@ -146,7 +146,7 @@ function getAuthHeader( url, credentials ) {
 
     return new Promise( function( resolve ) {
         var req = request( options, function( error, response ) {
-            if ( response.statusCode === 401 && credentials && credentials.user && credentials.pass ) {
+            if ( !error && response && response.statusCode === 401 && credentials && credentials.user && credentials.pass ) {
                 // Using request's internal library we create an appropiate authorization header.
                 // This is a bit dangerous because internal changes in request/request, could break this code.
                 req.method = 'POST';
@@ -163,9 +163,15 @@ function getAuthHeader( url, credentials ) {
     } );
 }
 
-function getFormListUrl( server, id ) {
-    var query = ( id ) ? '?formID=' + id : '';
+function getFormListUrl( server, id, customParam ) {
+    var query = id ? '?formID=' + id : '';
     var path = ( server.lastIndexOf( '/' ) === server.length - 1 ) ? 'formList' : '/formList';
+
+    if ( customParam ) {
+        query += query ? '&' : '?';
+        query += config[ 'query parameter to pass to submission' ] + '=' + customParam;
+    }
+
     return server + path + query;
 }
 

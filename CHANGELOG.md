@@ -2,7 +2,84 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-[1.55.5] - 2017-11-30
+[Unreleased]
+---------------------
+##### Added
+- Support for escaping \* and \_ characters in markdown.
+
+##### Fixed
+- Proper IANA language tag inclusion in XForm does not prevent/override (weak) directionality detection.
+
+[1.56.1] - 2018-01-01
+---------------------
+##### Fixed
+- Repeat with field-list and parent group with field-list does not show "+" button and both groups fail to collapse.
+- Dialogs no longer shown to use (**serious regression in 1.55.10**).
+
+[1.56.0] - 2017-12-29
+----------------------
+##### Added
+- The "query parameter to add to submission" (in config.json) is now also added to all /formList requests.
+
+##### Changed
+- Added workarounds for IE11 to match regular checkbox and radiobutton styling.
+- Modest performance improvement with large repeat counts.
+
+##### Fixed
+- Collapse icon overlaps border on small screens.
+- Black background shown behind radiobuttons and checkboxes on iOS browsers.
+- RTL scripts do not have centered checkboxes/radiobuttons in tables.
+- If preload item is placed inside a repeat with a repeat-count of 0, an exception occurs.
+- RTL scripts with Grid Theme have mislocated repeat numbers and repeat removal button.
+
+[1.55.10] - 2017-12-25
+----------------------
+##### Changed
+- Image scaling by Image Map widget is more sensitive to screen size to avoid scrolling.
+
+##### Fixed
+- The advertised required transformer version fails to build on Windows 10.
+- In Signature/Draw widget a line can be detected as a page-swipe in Pages mode.
+- If Signature/Draw widget has loaded an existing value and is not on the first page, the drawing won't be shown until clicked.
+- If SVG image in Image Map widget contains inline `style` attribute with fill and stroke the 'selected' state is not shown.
+
+[1.55.9] - 2017-12-22
+---------------------
+##### Changed
+- Error messages in filepicker are now translatable.
+- Firefox checkboxes now styled properly.
+
+##### Fixed
+- jr:choicename() is causing an exception when wrapped inside other functions.
+- Workaround for an XLSForm limitation by moving "no-collapse" appearance of repeat to its parent group.
+
+[1.55.8] - 2017-12-19
+---------------------
+##### Changed
+- When clicking the label of an upload question, the filepicker will no longer launch.
+
+##### Fixed
+- Datepicker not available on iOS browsers (again, sorry).
+
+[1.55.7] - 2017-12-12
+---------------------
+##### Fixed
+- Offline loading fails if language code in `Accept-Language` header contains a dialect such as `sv-SE`.
+
+[1.55.6] - 2017-12-11
+---------------------
+##### Fixed
+- Printing: When swapping to Grid Theme via API or app 'default theme' setting, the proper print dialog is not shown.
+- Printing: Non-relevant non-select fields are not greyed out.
+- Printing: Geo widget without "maps" appearance is shown on screen but not on printout.
+- Printing: Geo widget map/zoom selector buttons are shown on printouts.
+- Printing: Various Analog Scale widget styling issues.
+- Grid Theme: A table-list/list-no-label question does not have a bottom border.
+- Grid Theme: Top of page sometimes does not have a border.
+- jr:choice-name() function can not handle syntax with more complex XPaths.
+- Nodenames with dots cause an exception during extraction of a serialized model without irrelevant nodes.
+
+[1.55.5] - 2017-11-29
 --------------------
 ##### Fixed
 - When a repeat is removed any logic that depends on repeat position changes is not updated when it should be.
