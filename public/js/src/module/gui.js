@@ -6,6 +6,7 @@
 
 var support = require( 'enketo-core/src/js/support' );
 var settings = require( './settings' );
+var Promise = require( 'lie' );
 var printForm = require( 'enketo-core/src/js/print' );
 var translator = require( './translator' );
 var t = translator.t;
@@ -189,6 +190,7 @@ function feedback( message, duration ) {
 
 /**
  * Shows a modal alert dialog.
+ * TODO: parameters should change to (content, options)
  *
  * @param {string} message
  * @param {string=} heading
@@ -216,6 +218,7 @@ function alert( message, heading, level, duration ) {
 
 /**
  * Shows a confirmation dialog
+ * TODO: should return Promise as in enketo-core that resolves when confirmed and rejects when not. After that dialog.js becomes obsolete.
  *
  * @param {?(Object.<string, (string|boolean)>|string)=} content - In its simplest form this is just a string but it can
  *                                                         also an object with parameters msg, heading and errorMsg.
@@ -280,7 +283,6 @@ function prompt( content, choices, inputs ) {
         } ],
         input: inputs,
         callback: function( value ) {
-            console.log( 'closing dialog with value:', value );
             if ( value && typeof choices.posAction !== 'undefined' ) {
                 choices.posAction.call( null, value );
             } else if ( typeof choices.negAction !== 'undefined' ) {
@@ -300,9 +302,9 @@ function prompt( content, choices, inputs ) {
  * @param  {string=} msg       message to show
  * @param  {string=} serverURL serverURL for which authentication is required
  */
-function confirmLogin( msg, serverURL ) {
+function confirmLogin( msg /*, serverURL*/ ) {
     msg = msg || t( 'confirm.login.msg' );
-    serverURL = serverURL || settings.serverURL;
+    //serverURL = serverURL || settings.serverURL;
 
     confirm( {
         msg: msg,

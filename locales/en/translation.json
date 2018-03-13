@@ -189,6 +189,11 @@
         "admin": "Contact the survey administrator please.",
         "support": "Contact __supportEmail__ please."
     },
+    "drawwidget": {
+        "annotation": "file and drawing",
+        "drawing": "drawing",
+        "signature": "signature"
+    },
     "enketo": {
         "power": "Powered by"
     },
@@ -213,7 +218,11 @@
         "header": "Information"
     },
     "filepicker": {
+        "file": "file",
         "notFound": "File __existing__ could not be found (leave unchanged if already submitted and you want to preserve it).",
+        "placeholder": "Click here to upload file. (< __maxSize__)",
+        "resetWarning": "This will remove the __item__. Are you sure you want to do this?",
+        "toolargeerror": "File too large (> __maxSize__)",
         "waitingForPermissions": "Waiting for user permissions."
     },
     "form": {
@@ -251,11 +260,15 @@
         "latitude": "latitude (x.y °)",
         "longitude": "longitude (x.y °)",
         "points": "points",
+        "removePoint": "This will completely remove the current geopoint from the list of geopoints and cannot be undone. Are you sure you want to do this?",
         "searchPlaceholder": "search for place or address"
     },
     "here": "here",
     "home": {
         "msg": "__appTitle__ is running! Please access Enketo forms from your __serverName__ installation."
+    },
+    "imagemap": {
+        "svgNotFound": "SVG image could not be found"
     },
     "langs": {
         "ar": "Arabic",
@@ -274,6 +287,7 @@
         "lo": "Lao",
         "nl": "Dutch",
         "no": "Norwegian",
+        "pl": "Polish",
         "ro": "Romanian",
         "sk": "Slovak",
         "supported": "Languages supported: ",

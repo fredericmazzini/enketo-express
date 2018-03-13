@@ -6,6 +6,7 @@
 
 var db = require( 'db.js' );
 var utils = require( './utils' );
+var Promise = require( 'lie' );
 var sniffer = require( './sniffer' );
 var t = require( './translator' ).t;
 
@@ -142,7 +143,7 @@ function _checkSupport() {
     var error;
     // best to perform this specific check ourselves and not rely on specific error message in db.js.
     return new Promise( function( resolve, reject ) {
-        if ( typeof indexedDB === "object" ) {
+        if ( typeof indexedDB === 'object' ) {
             resolve();
         } else {
             if ( sniffer.os.ios ) {
@@ -172,20 +173,6 @@ function _canStoreBlobs() {
     var aBlob = new Blob( [ '<a id="a"><b id="b">hey!</b></a>' ], {
         type: 'text/xml'
     } );
-
-    /*
-     * Chrome appears to store blobs fine, but after a few hours, when retreiving a blob,
-     * and creating an ObjectURL from it, the object URL returns a 404. 
-     * Similarly, trying to use FileReader to readAsDataURL, results in a null result.
-     *
-     * Last checked in Chrome 49.0.2623.108
-     *
-     * https://github.com/kobotoolbox/enketo-express/issues/155
-     */
-    if ( sniffer.browser.chrome ) {
-        console.log( 'This is Chrome which has a blob/file storage problem.' );
-        return Promise.reject();
-    }
 
     return propertyStore.update( {
         name: 'testBlobWrite',
@@ -556,7 +543,6 @@ recordStore = {
      */
     update: function( record ) {
         var fileKeys;
-        var tasks = [];
         var obsoleteFiles = [];
 
         if ( !record.instanceId || !record.enketoId || !record.name || !record.xml ) {

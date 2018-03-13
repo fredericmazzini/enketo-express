@@ -1,15 +1,13 @@
-'use strict';
-
-var csrfProtection = require( 'csurf' )( {
+const csrfProtection = require( 'csurf' )( {
     cookie: true
 } );
-var jwt = require( 'jwt-simple' );
-var express = require( 'express' );
-var router = express.Router();
+const jwt = require( 'jwt-simple' );
+const express = require( 'express' );
+const router = express.Router();
 // var debug = require( 'debug' )( 'authentication-controller' );
 
-module.exports = function( app ) {
-    app.use( app.get( 'base path' ) + '/', router );
+module.exports = app => {
+    app.use( `${app.get( 'base path' )}/`, router );
 };
 
 router
@@ -18,22 +16,21 @@ router
     .post( '/login', csrfProtection, setToken );
 
 function login( req, res, next ) {
-    var error;
-    var authSettings = req.app.get( 'linked form and data server' ).authentication;
-    var externalLoginUrl = authSettings[ 'external login url that sets cookie' ];
-    var authenticationManagedByEnketo = authSettings[ 'managed by enketo' ];
-    var returnUrl = req.query.return_url || '';
+    let error;
+    const authSettings = req.app.get( 'linked form and data server' ).authentication;
+    const returnUrl = req.query.return_url || '';
 
-    if ( !authenticationManagedByEnketo ) {
-        if ( externalLoginUrl ) {
-            // the external login url is expected to:
+    if ( authSettings.type.toLowerCase() !== 'basic' ) {
+        if ( authSettings.url ) {
+            // the url is expected to:
             // - authenticate the user, 
-            // - set a session cookie (cross-domain if necessary), 
+            // - set a session cookie (cross-domain if necessary) or add a token as query parameter to the return URL, 
             // - and return the user back to Enketo
-            // - enketo will then pass this cookie along when requesting resources, submitting data
-            res.redirect( externalLoginUrl.replace( '{RETURNURL}', returnUrl ) );
+            // - enketo will then pass the cookie or token along when requesting resources, or submitting data
+            // Though returnUrl was encoded with encodeURIComponent, for some reason it appears to have been automatically decoded here.
+            res.redirect( authSettings.url.replace( '{RETURNURL}', encodeURIComponent( returnUrl ) ) );
         } else {
-            error = new Error( 'Enketo-express was not configured correctly. Enketo should either manage authentication itself (configuration set to true), or an external login url that sets a cookie should be provided.)' );
+            error = new Error( 'Enketo configuration error. External authentication URL is missing.' );
             error.status = 500;
             next( error );
         }
@@ -58,31 +55,27 @@ function logout( req, res ) {
 }
 
 function setToken( req, res ) {
-    var token;
-    var authOptions;
-    var uidOptions;
-    var secure;
-    var username = req.body.username.trim();
-    var maxAge = 30 * 24 * 60 * 60 * 1000;
-    var returnUrl = req.query.return_url || '';
+    const username = req.body.username.trim();
+    const maxAge = 30 * 24 * 60 * 60 * 1000;
+    const returnUrl = req.query.return_url || '';
 
-    token = jwt.encode( {
+    const token = jwt.encode( {
         user: username,
         pass: req.body.password
     }, req.app.get( 'encryption key' ) );
 
     // Do not allow authentication cookies to be saved if enketo runs on http, unless 'allow insecure transport' is set to true
     // This is double because the check in login() already ensures the login screen isn't even shown.
-    secure = ( req.protocol === 'production' && !req.app.get( 'linked form and data server' ).authentication[ 'allow insecure transport' ] );
+    const secure = ( req.protocol === 'production' && !req.app.get( 'linked form and data server' ).authentication[ 'allow insecure transport' ] );
 
-    authOptions = {
-        secure: secure,
+    const authOptions = {
+        secure,
         signed: true,
         httpOnly: true,
         path: '/'
     };
 
-    uidOptions = {
+    const uidOptions = {
         signed: true,
         maxAge: 30 * 24 * 60 * 60 * 1000,
         path: '/'

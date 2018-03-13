@@ -8,17 +8,16 @@ var $ = require( 'jquery' );
 var gui = require( './module/gui' );
 var controller = require( './module/controller-webform' );
 var settings = require( './module/settings' );
+var Promise = require( 'lie' );
 var connection = require( './module/connection' );
 var translator = require( './module/translator' );
 var t = translator.t;
 var utils = require( './module/utils' );
 var $loader = $( '.form__loader' );
-var $form = $( 'form.or' );
 var $buttons = $( '.form-header__button--print, button#submit-form' );
 var survey = {
     enketoId: settings.enketoId,
     instanceId: settings.instanceId,
-    noHashes: !settings.offline
 };
 
 translator.init( survey )
@@ -48,6 +47,7 @@ function _updateMaxSizeSetting( maxSize ) {
     if ( maxSize ) {
         // overwrite default max size
         settings.maxSize = maxSize;
+        $( 'form.or' ).trigger( 'updateMaxSize' );
     }
 }
 

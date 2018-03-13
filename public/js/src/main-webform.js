@@ -9,6 +9,7 @@ var gui = require( './module/gui' );
 var controller = require( './module/controller-webform' );
 var settings = require( './module/settings' );
 var connection = require( './module/connection' );
+var Promise = require( 'lie' );
 var FormModel = require( 'enketo-core/src/js/Form-model' );
 var translator = require( './module/translator' );
 var t = translator.t;
@@ -24,8 +25,7 @@ var survey = {
     serverUrl: settings.serverUrl,
     xformId: settings.xformId,
     xformUrl: settings.xformUrl,
-    defaults: settings.defaults,
-    noHashes: !settings.offline
+    defaults: settings.defaults
 };
 
 _setEmergencyHandlers();
@@ -66,6 +66,7 @@ function _updateMaxSizeSetting( maxSize ) {
     if ( maxSize ) {
         // overwrite default max size
         settings.maxSize = maxSize;
+        $( 'form.or' ).trigger( 'updateMaxSize' );
     }
 }
 

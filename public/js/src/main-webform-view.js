@@ -11,13 +11,11 @@ var settings = require( './module/settings' );
 var connection = require( './module/connection' );
 var translator = require( './module/translator' );
 var t = translator.t;
-var utils = require( './module/utils' );
 var $loader = $( '.form__loader' );
 var $buttons = $( '.form-header__button--print, button#close-form' );
 var survey = {
     enketoId: settings.enketoId,
-    instanceId: settings.instanceId,
-    noHashes: true
+    instanceId: settings.instanceId
 };
 
 // Completely disable calculations in Enketo Core

@@ -1,25 +1,21 @@
-'use strict';
-
-var Promise = require( 'lie' );
-var transformer = require( 'enketo-transformer' );
-var communicator = require( '../lib/communicator' );
-var surveyModel = require( '../models/survey-model' );
-var cacheModel = require( '../models/cache-model' );
-var account = require( '../models/account-model' );
-var user = require( '../models/user-model' );
-var utils = require( '../lib/utils' );
-var routerUtils = require( '../lib/router-utils' );
-var keys = require( '../lib/router-utils' ).idEncryptionKeys;
-var isArray = require( 'lodash/isArray' );
-var express = require( 'express' );
-var url = require( 'url' );
-var router = express.Router();
-var config = require( '../models/config-model' ).server;
+const transformer = require( 'enketo-transformer' );
+const communicator = require( '../lib/communicator' );
+const surveyModel = require( '../models/survey-model' );
+const cacheModel = require( '../models/cache-model' );
+const account = require( '../models/account-model' );
+const user = require( '../models/user-model' );
+const utils = require( '../lib/utils' );
+const routerUtils = require( '../lib/router-utils' );
+const isArray = require( 'lodash/isArray' );
+const express = require( 'express' );
+const url = require( 'url' );
+const router = express.Router();
+const config = require( '../models/config-model' ).server;
 
 // var debug = require( 'debug' )( 'transformation-controller' );
 
-module.exports = function( app ) {
-    app.use( app.get( 'base path' ) + '/transform', router );
+module.exports = app => {
+    app.use( `${app.get( 'base path' )}/transform`, router );
 };
 
 router.param( 'enketo_id', routerUtils.enketoId );
@@ -27,7 +23,7 @@ router.param( 'encrypted_enketo_id_single', routerUtils.encryptedEnketoIdSingle 
 router.param( 'encrypted_enketo_id_view', routerUtils.encryptedEnketoIdView );
 
 router
-    .post( '*', function( req, res, next ) {
+    .post( '*', ( req, res, next ) => {
         // set content-type to json to provide appropriate json Error responses
         res.set( 'Content-Type', 'application/json' );
         next();
@@ -46,30 +42,26 @@ router
  * @return {[type]}        [description]
  */
 function getSurveyParts( req, res, next ) {
-    var surveyBare;
-
     _getSurveyParams( req )
-        .then( function( survey ) {
+        .then( survey => {
             if ( survey.info ) {
+                // A request with "xformUrl" body parameter was used (unlaunched form)
                 _getFormDirectly( survey )
-                    .then( function( survey ) {
+                    .then( survey => {
                         _respond( res, survey );
                     } )
                     .catch( next );
             } else {
                 _authenticate( survey )
                     .then( _getFormFromCache )
-                    .then( function( result ) {
-                        if ( result && survey.noHashes ) {
-                            _updateCache( result );
-                            return result;
-                        } else if ( result ) {
+                    .then( result => {
+                        if ( result ) {
                             return _updateCache( result );
                         } else {
                             return _updateCache( survey );
                         }
                     } )
-                    .then( function( result ) {
+                    .then( result => {
                         _respond( res, result );
                     } )
                     .catch( next );
@@ -87,11 +79,9 @@ function getSurveyParts( req, res, next ) {
  */
 function getSurveyHash( req, res, next ) {
     _getSurveyParams( req )
-        .then( function( survey ) {
-            return cacheModel.getHashes( survey );
-        } )
+        .then( survey => cacheModel.getHashes( survey ) )
         .then( _updateCache )
-        .then( function( survey ) {
+        .then( survey => {
             if ( survey.hasOwnProperty( 'credentials' ) ) {
                 delete survey.credentials;
             }
@@ -105,7 +95,6 @@ function getSurveyHash( req, res, next ) {
 
 function _getFormDirectly( survey ) {
     return communicator.getXForm( survey )
-        .then( _addMediaMap )
         .then( transformer.transform );
 }
 
@@ -125,7 +114,7 @@ function _updateCache( survey ) {
     return communicator.getXFormInfo( survey )
         .then( communicator.getManifest )
         .then( cacheModel.check )
-        .then( function( upToDate ) {
+        .then( upToDate => {
             if ( !upToDate ) {
                 delete survey.xform;
                 delete survey.form;
@@ -134,14 +123,13 @@ function _updateCache( survey ) {
                 delete survey.mediaHash;
                 delete survey.mediaUrlHash;
                 delete survey.formHash;
-                delete survey.media;
                 return _getFormDirectly( survey )
                     .then( cacheModel.set );
             }
             return survey;
         } )
-        .then( _addMediaHashes )
-        .catch( function( error ) {
+        .then( _addMediaHash )
+        .catch( error => {
             if ( error.status === 401 || error.status === 404 ) {
                 cacheModel.flush( survey );
             } else {
@@ -152,7 +140,7 @@ function _updateCache( survey ) {
         } );
 }
 
-function _addMediaHashes( survey ) {
+function _addMediaHash( survey ) {
     survey.mediaHash = utils.getXformsManifestHash( survey.manifest, 'all' );
     return Promise.resolve( survey );
 }
@@ -162,21 +150,42 @@ function _addMediaHashes( survey ) {
  * 
  * @param {[type]} survey [description]
  */
-function _addMediaMap( survey ) {
-    var mediaMap = null;
+function _getMediaMap( manifest ) {
+    let mediaMap = null;
 
-    return new Promise( function( resolve ) {
-        if ( isArray( survey.manifest ) ) {
-            survey.manifest.forEach( function( file ) {
-                mediaMap = mediaMap ? mediaMap : {};
-                if ( file.downloadUrl ) {
-                    mediaMap[ file.filename ] = _toLocalMediaUrl( file.downloadUrl );
-                }
-            } );
+    if ( isArray( manifest ) ) {
+        manifest.forEach( file => {
+            mediaMap = mediaMap ? mediaMap : {};
+            if ( file.downloadUrl ) {
+                mediaMap[ file.filename ] = _toLocalMediaUrl( file.downloadUrl );
+            }
+        } );
+    }
+
+    return mediaMap;
+}
+
+function _replaceMediaSources( survey ) {
+    const media = _getMediaMap( survey.manifest );
+
+    if ( media ) {
+        const JR_URL = /"jr:\/\/[\w-]+\/([^"]+)"/g;
+        const replacer = ( match, filename ) => {
+            if ( media[ filename ] ) {
+                return `"${media[ filename ].replace('&', '&amp;')}"`;
+            }
+            return match;
+        };
+
+        survey.form = survey.form.replace( JR_URL, replacer );
+        survey.model = survey.model.replace( JR_URL, replacer );
+
+        if ( media[ 'form_logo.png' ] ) {
+            survey.form = survey.form.replace( /(class="form-logo"\s*>)/, `$1<img src="${media['form_logo.png']}" alt="form logo">` );
         }
-        survey.media = mediaMap;
-        resolve( survey );
-    } );
+    }
+
+    return survey;
 }
 
 /**
@@ -186,20 +195,18 @@ function _addMediaMap( survey ) {
  * @return {string}     The converted url.
  */
 function _toLocalMediaUrl( url ) {
-    var localUrl = config[ 'base path' ] + '/media/get/' + url.replace( /(https?):\/\//, '$1/' );
+    const localUrl = `${config[ 'base path' ]}/media/get/${url.replace( /(https?):\/\//, '$1/' )}`;
     return localUrl;
 }
 
 function _checkQuota( survey ) {
-    var error;
-
     return surveyModel
         .getNumber( survey.account.linkedServer )
-        .then( function( quotaUsed ) {
+        .then( quotaUsed => {
             if ( quotaUsed <= survey.account.quota ) {
                 return Promise.resolve( survey );
             }
-            error = new Error( 'Forbidden. Quota exceeded.' );
+            const error = new Error( 'Forbidden. Quota exceeded.' );
             error.status = 403;
             throw error;
         } );
@@ -207,6 +214,8 @@ function _checkQuota( survey ) {
 
 function _respond( res, survey ) {
     delete survey.credentials;
+
+    _replaceMediaSources( survey );
 
     res.status( 200 );
     res.send( {
@@ -225,8 +234,8 @@ function _respond( res, survey ) {
 }
 
 function _getCombinedHash( survey ) {
-    var FORCE_UPDATE = 1;
-    var brandingHash = ( survey.account.branding && survey.account.branding.source ) ? utils.md5( survey.account.branding.source ) : '';
+    const FORCE_UPDATE = 1;
+    const brandingHash = ( survey.account.branding && survey.account.branding.source ) ? utils.md5( survey.account.branding.source ) : '';
     return [ String( survey.formHash ), String( survey.mediaHash ), String( survey.xslHash ), String( survey.theme ), String( brandingHash ), String( FORCE_UPDATE ) ].join( '-' );
 }
 
@@ -239,20 +248,15 @@ function _setCookieAndCredentials( survey, req ) {
 }
 
 function _getSurveyParams( req ) {
-    var error;
-    var urlObj;
-    var domain;
-    var params = req.body;
-    var noHashes = ( params.noHashes === 'true' );
-    var customParamName = req.app.get( 'query parameter to pass to submission' );
-    var customParam = customParamName ? req.query[ customParamName ] : null;
+    const params = req.body;
+    const customParamName = req.app.get( 'query parameter to pass to submission' );
+    const customParam = customParamName ? req.query[ customParamName ] : null;
 
     if ( req.enketoId ) {
         return surveyModel.get( req.enketoId )
             .then( account.check )
             .then( _checkQuota )
-            .then( function( survey ) {
-                survey.noHashes = noHashes;
+            .then( survey => {
                 survey.customParam = customParam;
                 return _setCookieAndCredentials( survey, req );
             } );
@@ -262,39 +266,33 @@ function _getSurveyParams( req ) {
                 openRosaId: params.xformId
             } )
             .then( _checkQuota )
-            .then( function( survey ) {
-                survey.noHashes = noHashes;
+            .then( survey => {
                 survey.customParam = customParam;
                 return _setCookieAndCredentials( survey, req );
             } );
     } else if ( params.xformUrl ) {
-        urlObj = url.parse( params.xformUrl );
+        const urlObj = url.parse( params.xformUrl );
         if ( !urlObj || !urlObj.protocol || !urlObj.host ) {
-            error = new Error( 'Bad Request. Form URL is invalid.' );
+            const error = new Error( 'Bad Request. Form URL is invalid.' );
             error.status = 400;
             throw error;
         }
         // The previews using the xform parameter are less strictly checked.
         // If an account with the domain is active, the check will pass.
-        domain = urlObj.protocol + '//' + urlObj.host;
+        const domain = `${urlObj.protocol}//${urlObj.host}`;
         return account.check( {
                 openRosaServer: domain
             } )
-            .then( function( survey ) {
-                // no need to check quota
-                return Promise.resolve( {
+            .then( survey => // no need to check quota
+                Promise.resolve( {
                     info: {
                         downloadUrl: params.xformUrl
                     },
                     account: survey.account
-                } );
-            } )
-            .then( function( survey ) {
-                survey.noHashes = noHashes;
-                return _setCookieAndCredentials( survey, req );
-            } );
+                } ) )
+            .then( survey => _setCookieAndCredentials( survey, req ) );
     } else {
-        error = new Error( 'Bad Request. Survey information not complete.' );
+        const error = new Error( 'Bad Request. Survey information not complete.' );
         error.status = 400;
         throw error;
     }

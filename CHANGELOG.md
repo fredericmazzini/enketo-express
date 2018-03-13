@@ -4,17 +4,138 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 [Unreleased]
 ---------------------
+##### Fixed:
+- Repeats with images become exponentially slower to load for each new repeat that is added.
+- In offline-capable views, the Image Map widget inside a repeat shows 'SVG image cannot be loaded' message when all is okay.
+
+[1.61.4] - 2018-03-09
+---------------------
+##### Fixed:
+- When radiobutton or checkbox is cleared programmatically the `data-checked` attribute is not updated.
+- Filenames of signature, annotation and drawing inputs are set to undefined-xx.png.
+
+[1.61.3] - 2018-03-05
+---------------------
+##### Fixed:
+- If existing drawing/signature/annotion is loaded from a http URL (editing submitted record), an exception occurs.
+- Submissions not being made in offline-capable webform views.
+
+[1.61.2] - 2018-03-02
+---------------------
+##### Added
+- Polish translations.
+
+##### Removed:
+- File upload "no preview for this file type" message.
+
+##### Fixed
+- Cursor in Grid theme set to text for no seemingly good reason.
+- Markdown headers not limited from h1-h6 as they should be (in Enketo Transformer)
+
+[1.61.1] - 2018-02-27
+---------------------
+##### Changed
+- Chrome bug workaround base64-conversion of blobs has been removed, so blobs are stored as blobs in Chrome now.
+- Show separate custom reset messages for drawing, signature and annotation widgets.
+
+##### Fixed
+- Print, Back and First button icons not visible in IE11.
+- Date format shown to user in readonly field is different from non-readonly field.
+- Autocomplete widget does not accept options that have multiple subsequent spaces in their label.
+- Draw widget draw color gets reset to the default color after undo-ing strokes.
+
+[1.61.0] - 2018-02-21
+---------------------
+##### Added
+- Download functionality to draw widgets.
+- Support for "new", "new-front", "new-rear" on media inputs.
+- Feature to undo drawing strokes in draw and annotate widgets.
+
+##### Changed
+- Show helpful error message if SVG image cannot be found with Image Map widget.
+- Native month-year datepicker used on mobile devices when available.
+
+##### Fixed
+- In annotate widget loaded file disappears when screen is resized.
+- Annotate widget not working on touchscreen devices.
+- Annotate widget stretches uploaded image.
+- Downloaded drawings have a different filename from the one stored in the record.
+- Imagemap widget does not work for a group `<g>` of `<path>`s.
+- Imagemap scaling issue when width and height defined in SVG file have units (pt).
+
+[1.60.0] - 2018-02-14
+---------------------
+##### Added
+- File pickers can now (only) be reset by a new reset button.
+- Download functionality to file pickers.
+- Full support for annotate widget.
+
+##### Changed
+- Repeats without form controls now no longer take up any visual space in the form.
+- Show upload placeholder with max file size.
+- Error messages in geopicker are now translatable.
+- Draw/signature widget requires confirmation before reset.
+- Geo widget and file widget now use consistent (app) modal dialogs instead of inconsistent native dialogs.
+
+##### Fixed
+- Instances with special characters in instance id attributes cannot to be queried.
+- Namespaces not resolved for secondary instances.
+- Slowdown with repeat-count that was introduced in 1.58.0.
+- Printing: geo widget with appearance "maps" does not show coordinate fields.
+- Printing: Analog scale widget with Grid theme in pages mode is messed up.
+
+[1.59.0] - 2018-01-30
+---------------------
+##### Added 
+- External authentication with token.
+
+##### Changed
+- Server-side form caching mechanism was re-written to support dynamic manifest URLs. **WARNING: test this release extra thoroughly wrt form updates**
+- Configuration for authentication has changed, see [documentation](./config/README.md). **WARNING: update your config.json** (even though old configuration should still work for now).
+
+##### Fixed
+- Date strings returned by XPath evaluator for question with type 'date' are not considered valid dates and set to ''.
+- When redirecting to an external login URL, the return URL is not encoded.
+- Instance('id' )/path/to/node does not work if 'id' is surrounded by whitespace.
+- Markdown headers preceded by whitespace fail to render as header and whitespace trimming is too aggresive.
+- Datepicker with "month-year" and "year" appearance shows full value.
+
+[1.58.0] - 2018-01-19
+---------------------
+##### Added
+- Option to turn off page-swipe support.
+- Support for escaping \# characters in markdown.
+
+##### Changed
+- Restored pulldown select button height to normal.
+- Reduced margins around markdown headers.
+- Markdown headers now work at the start of any line, even if not followed by a newline.
+
+##### Fixed
+- An output inside a group label that is the parent of a repeat with 0 instances, causes a loading exception.
+- Readonly question does not show constraint message.
+- A top-level group with a relevant that refers to a node inside a repeat may not get re-evaluated when the node changes and multiple repeats exist.
+- Notifications/news in form previews are shown on printouts.
+- Markdown headers in the middle of a string are not always ignored.
+
+[1.57.0] - 2018-01-08
+---------------------
 ##### Added
 - Support for escaping \* and \_ characters in markdown.
 
+##### Changed
+- Invalid dates (and datetimes) such as 2018-12-35 are no longer automically converted to a valid date. They convert to empty now.
+
 ##### Fixed
 - Proper IANA language tag inclusion in XForm does not prevent/override (weak) directionality detection.
+- Printing: datetime picker inputs print below each other in Chrome.
+- Safari invalidates any valid date (and datetime) with segments < 10, e.g. 2018-01-06.
 
 [1.56.1] - 2018-01-01
 ---------------------
 ##### Fixed
 - Repeat with field-list and parent group with field-list does not show "+" button and both groups fail to collapse.
-- Dialogs no longer shown to use (**serious regression in 1.55.10**).
+- Dialogs no longer shown to user (**serious regression in 1.55.10**).
 
 [1.56.0] - 2017-12-29
 ----------------------
