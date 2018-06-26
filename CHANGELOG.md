@@ -2,16 +2,165 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-[Unreleased]
+[ Unreleased ]
+---------------------
+##### Changed
+- Updated Lao and Spanish translations.
+
+##### Fixed
+- In a form containing a group with a single child repeat (and no other repeat sibling questions), fails to load a record where that group is empty. When creating the first repeat after load an exception occurs.
+- Output inside a group that is irrelevant upon loading does not get evaluated when the group becomes relevant.
+
+[1.67.0] - 2018-06-18
+----------------------
+##### Added
+- Ranking widget. **Warning: You may need to update your config.json to activate.**
+- URL widget. **Warning: You may need to update your config.json to activate.**
+
+##### Fixed
+- Range widget loading error if relevant is used.
+- When unfolding collapsed groups, the draw widgets are not functional until the window is resized.
+- Various styling degradations of geo widgets.
+- Dynamic defaults do not work with encoded square brackets.
+
+[1.66.3] - 2018-06-11
+----------------------
+##### Changed
+- Show latest commit as version on front page.
+
+##### Fixed
+- Readonly text inputs with a default value are hidden.
+- Certain XPath function calls without parameters cause an infinite loop.
+
+[1.66.2] - 2018-06-06
+----------------------
+##### Fixed
+- Likert widget not instantiating (regression in 1.66.0)
+- The print dialog for Grid forms does not show radiobuttons in IE11.
+- The button text of offline-capable form sometimes gets stuck on 'Save as Draft' when it should be 'Submit'.
+- Full previews (with Enketo ID) do not show correct maximum submission size in file upload questions.
+- Previews without Enketo ID do not show correct maximum submission size in file upload questions. **Note: make sure that a `HEAD` request to the form URL responds with the correct `X-Openrosa-Accept-Content-Length` header.**
+- Coordinates around the international dateline (longitude < -180 degrees) are considered invalid in geo widgets. Sorry, data collectors in Taveuni!
+
+[1.66.1] - 2018-06-04
+---------------------
+##### Fixed
+- Range widget turns geo coordinate inputs into range inputs.
+
+[1.66.0] - 2018-06-04
+--------------------
+##### Added
+- Support for `<sup>` and `<sub>` (superscript and subscript).
+- Support for range widget (basic). **Warning: You may need to update your config.json to activate.**
+
+##### Changed
+- Performance-optimized itemsets. Cutting-edge browsers can now deal well with 16,500 item documents.
+- Performance-optimized the loading of external data.
+
+[1.65.5] - 2018-05-24
+---------------------
+##### Changed
+- Improved accessibility of buttons and links.
+
+##### Fixed
+- Styling interference occurs when an appearance is added to a question type that doesn't support it.
+
+[1.65.4] - 2018-05-18
+---------------------
+##### Changed
+- Button text for alert modals to "OK".
+- Improved loading performance.
+
+##### Fixed
+- Thanks and logout page too dark (regression in 1.65.2).
+- The form language selector is disabled in readonly views.
+- If app disables offline functionality, a previously cached app continues to work.
+
+[1.65.3] - 2018-05-15
+---------------------
+##### Fixed
+- Login screen won't allow entering credentials (regression in 1.65.2).
+
+[1.65.2] - 2018-05-14
+---------------------
+##### Fixed
+- Appearance "horizontal" enlarges the last option if the remainder of the options modulo 3 is 1.
+- If all repeats containing a question that has skip logic are removed, an exception occurs when obtaining the model as string without irrelevant nodes.
+
+[1.65.1] - 2018-05-02
+---------------------
+##### Changed
+- Hide disabled reset button in draw widget.
+
+##### Fixed
+- Comment icon overlaps long label in simple select/select1 questions.
+- Pasted incorrect date value converts to today's date.
+- When a record is loaded with an empty value for a node that has a default value in the XForm, all secondary instance values are emptied. 
+
+[1.65.0] - 2018-04-25
+---------------------
+##### Added
+- `decimal-time()` support.
+- `distance()` support.
+
+##### Fixed
+- In Safari, readonly checkboxes and radiobuttons can still be manipulated and WILL modify the record, even if the UI doesn't update.
+- `decimal-date-time()` not spec-compliant at all.
+- Filepicker and drawing widgets have functional reset button when they are readonly.
+
+[1.64.0] - 2018-04-22
+---------------------
+##### Added
+- Basic `randomize()` support to shuffle nodesets (no support for itemsets with itext labels).
+- 
+##### Changed
+- Increased linespacing for labels of "select" questions.
+
+##### Fixed
+- GoTo functionality no longer working (regression in 1.62.1)
+- Modal dialogs called from widget (e.g. file input reset) no longer working.
+- `min()` and `max()` ignore non-last arguments/nodes with value 0.
+- Goto functionality throws exception if target is a comment question that is not inside a group and the form is in Pages Mode.
+
+[1.63.0] - 2018-04-14
+---------------------
+##### Added
+- Portugese translation
+
+##### Changed
+- Updated Spanish, German, Slovak, and Dutch translations.
+- Styling of + button to create a new repeated section.
+- Enketo ID generation is now creating a random string, and longer IDs.
+
+##### Fixed
+- Add-repeat (+) button not aligned properly in Grid theme when no repeats exist.
+- Manual date input without hyphen (i.e. large number) is converted to non-sensible date.
+
+[1.62.1] - 2018-04-06
+---------------------
+##### Changed
+- Loading screen styling.
+
+##### Fixed
+- Download filename may change in filepicker/draw widget if a record with media files is loaded, if the file is not served with the correct name.
+- Print button not revealed (regression in 1.62.0).
+- Images in Grid theme print/PDF view overflow into neighboring cells.
+
+[1.62.0] - 2018-04-03
 ---------------------
 ##### Added
 - Ability to directly obtain PDF of empty form or form with a record. See [apidocs.enketo.org](https://apidocs.enketo.org) (3 new endpoints).
+
+##### Changed
+- Annotate widget will now no longer allow drawing until an image has been uploaded.
 
 ##### Fixed
 - Print view of Grid Theme form in Pages mode doesn't properly stretch cells in the current page.
 - Markdown headers in Grid Theme are overlapping in print view.
 - Print view of Grid Theme doesn't correct width of last question in form.
 - If the form starts with a lengthy group, the print view shows only the form title on the first page.
+- Loading drawings from existing records, results in blank canvas after window resizing.
+- The image map widget shows 'SVG not found error' in Firefox sometimes, and if so, it fails to scale the image.
 
 [1.61.5] - 2018-03-21
 ---------------------

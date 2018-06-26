@@ -8,14 +8,14 @@ var settings = require( './settings' );
 var t = require( './translator' ).t;
 var utils = require( './utils' );
 var $ = require( 'jquery' );
-var Promise = require( 'lie' );
 var CONNECTION_URL = settings.basePath + '/connection';
 var TRANSFORM_URL = settings.basePath + '/transform/xform' +
     ( settings.enketoId ? '/' + settings.enketoIdPrefix + settings.enketoId : '' );
 var TRANSFORM_HASH_URL = settings.basePath + '/transform/xform/hash/' + settings.enketoIdPrefix + settings.enketoId;
 var EXPORT_URL = settings.basePath + '/export/get-url';
 var INSTANCE_URL = ( settings.enketoId ) ? settings.basePath + '/submission/' + settings.enketoIdPrefix + settings.enketoId : null;
-var MAX_SIZE_URL = ( settings.enketoId ) ? settings.basePath + '/submission/max-size/' + settings.enketoIdPrefix + settings.enketoId : null;
+var MAX_SIZE_URL = ( settings.enketoId ) ? settings.basePath + '/submission/max-size/' + settings.enketoIdPrefix + settings.enketoId :
+    settings.basePath + '/submission/max-size/?xformUrl=' + encodeURIComponent( settings.xformUrl );
 var ABSOLUTE_MAX_SIZE = 100 * 1024 * 1024;
 
 /**
@@ -122,7 +122,8 @@ function _uploadBatch( recordBatch ) {
                 headers: {
                     'X-OpenRosa-Version': '1.0',
                     'X-OpenRosa-Deprecated-Id': recordBatch.deprecatedId,
-                    'X-OpenRosa-Instance-Id': recordBatch.instanceId
+                    'X-OpenRosa-Instance-Id': recordBatch.instanceId,
+                    'Date': new Date().toUTCString()
                 },
                 timeout: settings.timeout
             } )
@@ -297,7 +298,7 @@ function getMaximumSubmissionSize() {
 
     return new Promise( function( resolve ) {
 
-        if ( MAX_SIZE_URL && settings.type !== 'preview' && settings.type !== 'app' ) {
+        if ( MAX_SIZE_URL ) {
             $.ajax( MAX_SIZE_URL, {
                     type: 'GET',
                     timeout: 5 * 1000,
@@ -374,8 +375,8 @@ function _getExternalData( survey ) {
 
         survey.externalData.forEach( function( instance, index ) {
             tasks.push( _getDataFile( instance.src ).then( function( data ) {
-                    // if CSV file, transform to XML String
-                    instance.xmlStr = ( typeof data === 'string' ) ? utils.csvToXml( data, survey.languageMap ) : ( new XMLSerializer() ).serializeToString( data );
+                    // if CSV file, transform to XML Document
+                    instance.xml = ( typeof data === 'string' ) ? utils.csvToXml( data, survey.languageMap ) : data;
                     return instance;
                 } )
                 .catch( function( e ) {

@@ -1,8 +1,10 @@
 'use strict';
 
-require( './module/promise-by-Q' );
-require( './module/Array-from' );
-require( './module/Array-includes' );
+require( 'enketo-core/src/js/polyfills-ie11' );
+// Workaround for https://github.com/kobotoolbox/enketo-express/issues/990
+// This can probably be removed in the future. Test modal dialogs called from file input widget (when resetting).
+require( './module/dialog' );
+
 
 var $ = require( 'jquery' );
 var gui = require( './module/gui' );
@@ -11,8 +13,8 @@ var settings = require( './module/settings' );
 var connection = require( './module/connection' );
 var translator = require( './module/translator' );
 var t = translator.t;
-var $loader = $( '.form__loader' );
-var $buttons = $( '.form-header__button--print, button#close-form' );
+var $loader = $( 'body > .main-loader' );
+var $formheader = $( '.main > .paper > .form-header' );
 var survey = {
     enketoId: settings.enketoId,
     instanceId: settings.instanceId
@@ -72,16 +74,16 @@ function _convertToReadonly( formParts ) {
     // mark form controls as read only
     // Note: Enketo made a syntax error by adding the readonly attribute on a <select>
     // Hence, we cannot use .prop('readonly', true). We'll continue the syntax error.
-    formParts.form.find( 'input, textarea, select' ).attr( 'readonly', 'readonly' );
+    formParts.form.find( 'input, textarea, select:not(#form-languages)' ).attr( 'readonly', 'readonly' );
     // Properly make native selects readonly (for touchscreens)
-    formParts.form.find( 'option' ).prop( 'disabled', true );
+    formParts.form.find( 'select:not(#form-languages) option' ).prop( 'disabled', true );
     // prevent adding an Add/Remove UI on repeats
     formParts.form.find( '.or-repeat-info' ).attr( 'data-repeat-fixed', 'fixed' );
     return formParts;
 }
 
 function _init( formParts ) {
-    $loader.replaceWith( formParts.form );
+    $formheader.after( formParts.form );
     translator.localize( document.querySelector( 'form.or' ) );
     $( document ).ready( function() {
         controller.init( 'form.or:eq(0)', {
@@ -89,8 +91,7 @@ function _init( formParts ) {
             instanceStr: formParts.instance,
             external: formParts.externalData,
             instanceAttachments: formParts.instanceAttachments,
-        } ).then( function( form ) {
-            form.view.$.add( $buttons ).removeClass( 'hide' );
+        } ).then( function() {
             $( 'head>title' ).text( $( '#form-title' ).text() );
             if ( settings.print ) {
                 gui.applyPrintStyle();

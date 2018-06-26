@@ -10,7 +10,6 @@ const isArray = require( 'lodash/isArray' );
 const express = require( 'express' );
 const url = require( 'url' );
 const router = express.Router();
-const config = require( '../models/config-model' ).server;
 
 // var debug = require( 'debug' )( 'transformation-controller' );
 
@@ -157,7 +156,7 @@ function _getMediaMap( manifest ) {
         manifest.forEach( file => {
             mediaMap = mediaMap ? mediaMap : {};
             if ( file.downloadUrl ) {
-                mediaMap[ file.filename ] = _toLocalMediaUrl( file.downloadUrl );
+                mediaMap[ file.filename ] = utils.toLocalMediaUrl( file.downloadUrl );
             }
         } );
     }
@@ -186,17 +185,6 @@ function _replaceMediaSources( survey ) {
     }
 
     return survey;
-}
-
-/**
- * Converts a url to a local (proxied) url.
- *
- * @param  {string} url The url to convert.
- * @return {string}     The converted url.
- */
-function _toLocalMediaUrl( url ) {
-    const localUrl = `${config[ 'base path' ]}/media/get/${url.replace( /(https?):\/\//, '$1/' )}`;
-    return localUrl;
 }
 
 function _checkQuota( survey ) {
@@ -277,11 +265,9 @@ function _getSurveyParams( req ) {
             error.status = 400;
             throw error;
         }
-        // The previews using the xform parameter are less strictly checked.
-        // If an account with the domain is active, the check will pass.
-        const domain = `${urlObj.protocol}//${urlObj.host}`;
+        const xUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
         return account.check( {
-                openRosaServer: domain
+                openRosaServer: xUrl
             } )
             .then( survey => // no need to check quota
                 Promise.resolve( {

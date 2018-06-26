@@ -1,11 +1,5 @@
-/* global describe, require, it, beforeEach, afterEach, expect, Blob, sinon */
-'use strict';
-
-global.Promise = require( 'lie' );
-
 var formCache = require( '../../public/js/src/module/form-cache' );
 var connection = require( '../../public/js/src/module/connection' );
-var Promise = require( 'lie' );
 var $ = require( 'jquery' );
 
 var url1 = '/path/to/source.png';
@@ -18,7 +12,7 @@ describe( 'Client Form Cache', function() {
 
     beforeEach( function() {
         survey = {};
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         getFormPartsSpy = sandbox.stub( connection, 'getFormParts' ).callsFake( function( survey ) {
             return Promise.resolve( {
                 enketoId: survey.enketoId,

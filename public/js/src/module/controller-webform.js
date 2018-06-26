@@ -6,7 +6,6 @@
 
 var gui = require( './gui' );
 var connection = require( './connection' );
-var Promise = require( 'lie' );
 var settings = require( './settings' );
 var Form = require( 'enketo-core' );
 var fileManager = require( './file-manager' );
@@ -20,7 +19,6 @@ var formData;
 var $formprogress;
 var formOptions = {
     clearIrrelevantImmediately: false,
-    goTo: settings.goTo,
     printRelevantOnly: settings.printRelevantOnly
 };
 
@@ -45,6 +43,16 @@ function init( selector, data ) {
 
             form = new Form( formSelector, data, formOptions );
             loadErrors = form.init();
+
+            // Remove loader. This will make the form visible.
+            // In order to aggregate regular loadErrors and GoTo loaderrors,
+            // this is placed in between form.init() and form.goTo().
+            $( 'body > .main-loader' ).remove();
+
+            if ( settings.goTo && location.hash ) {
+                console.log( 'going to ', location.hash.substring( 1 ) );
+                loadErrors = loadErrors.concat( form.goTo( location.hash.substring( 1 ) ) );
+            }
 
             if ( form.encryptionKey ) {
                 loadErrors.unshift( '<strong>' + t( 'error.encryptionnotsupported' ) + '</strong>' );
@@ -584,7 +592,9 @@ function _setEventHandlers() {
     if ( settings.draftEnabled !== false ) {
         $( '.form-footer [name="draft"]' ).on( 'change', function() {
             var text = ( $( this ).prop( 'checked' ) ) ? t( 'formfooter.savedraft.btn' ) : t( 'formfooter.submit.btn' );
-            $( '#submit-form' ).get( 0 ).lastChild.textContent = text;
+            // Note: using .btnText plugin because button may be in a busy state => https://github.com/kobotoolbox/enketo-express/issues/1043
+            $( '#submit-form' ).btnText( text );
+
         } ).closest( '.draft' ).toggleClass( 'hide', !settings.offline );
     }
 

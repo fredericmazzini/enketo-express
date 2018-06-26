@@ -1,4 +1,5 @@
 const crypto = require( 'crypto' );
+const config = require( '../models/config-model' ).server;
 // var debug = require( 'debug' )( 'utils' );
 
 /** 
@@ -96,17 +97,13 @@ function insecureAes192Decrypt( encrypted, pw ) {
     return decrypted;
 }
 
-function randomString( howMany, chars ) {
-    chars = chars || 'abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNOPQRSTUWXYZ0123456789';
-    const rnd = crypto.randomBytes( howMany ),
-        value = new Array( howMany ),
-        len = chars.length;
+function randomString( howMany = 8, chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' ) {
+    const rnd = crypto.randomBytes( howMany );
 
-    for ( let i = 0; i < howMany; i++ ) {
-        value[ i ] = chars[ rnd[ i ] % len ];
-    }
-
-    return value.join( '' );
+    return new Array( howMany )
+        .fill() // create indices, so map can iterate
+        .map( ( val, i ) => chars[ rnd[ i ] % chars.length ] )
+        .join( '' );
 }
 
 function pickRandomItemFromArray( array ) {
@@ -147,6 +144,18 @@ function areOwnPropertiesEqual( a, b ) {
     return true;
 }
 
+/**
+ * Converts a url to a local (proxied) url.
+ *
+ * @param  {string} url The url to convert.
+ * @return {string}     The converted url.
+ */
+function toLocalMediaUrl( url ) {
+    const localUrl = `${config[ 'base path' ]}/media/get/${url.replace( /(https?):\/\//, '$1/' )}`;
+    return localUrl;
+}
+
+
 module.exports = {
     getOpenRosaKey,
     getXformsManifestHash,
@@ -157,5 +166,6 @@ module.exports = {
     pickRandomItemFromArray,
     areOwnPropertiesEqual,
     insecureAes192Decrypt,
-    insecureAes192Encrypt
+    insecureAes192Encrypt,
+    toLocalMediaUrl
 };

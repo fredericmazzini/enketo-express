@@ -77,8 +77,8 @@ function getManifest( survey ) {
  * @return {[type]}        promise
  */
 function getMaxSize( survey ) {
-    const server = survey.openRosaServer;
-    const submissionUrl = ( server.lastIndexOf( '/' ) === server.length - 1 ) ? `${server}submission` : `${server}/submission`;
+    // Using survey.xformUrl is non-standard but the only way for previews served from `?form=URL`.
+    const submissionUrl = survey.openRosaServer ? getSubmissionUrl( survey.openRosaServer ) : survey.info.downloadUrl;
 
     const options = {
         url: submissionUrl,
@@ -123,7 +123,8 @@ function getAuthHeader( url, credentials ) {
         url,
         method: 'head',
         headers: {
-            'X-OpenRosa-Version': '1.0'
+            'X-OpenRosa-Version': '1.0',
+            'Date': new Date().toUTCString()
         }
     };
 
@@ -174,6 +175,7 @@ function getUpdatedRequestOptions( options ) {
     // set headers
     options.headers = options.headers || {};
     options.headers[ 'X-OpenRosa-Version' ] = '1.0';
+    options.headers[ 'Date' ] = new Date().toUTCString();
 
     if ( !options.headers.cookie ) {
         // remove undefined cookie
@@ -282,7 +284,7 @@ function _findFormAddInfo( formListXml, survey ) {
 
                 if ( !found ) {
                     error = new TError( 'error.notfoundinformlist', {
-                        formId: `"${survey.openRosaId}"`
+                        formId: survey.openRosaId
                     } );
                     error.status = 404;
                     reject( error );

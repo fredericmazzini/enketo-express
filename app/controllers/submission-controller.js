@@ -23,7 +23,7 @@ router
         res.set( 'Content-Type', 'application/json' );
         next();
     } )
-    .get( '/max-size/:enketo_id', maxSize )
+    .get( '/max-size/:enketo_id?', maxSize )
     .get( '/max-size/:encrypted_enketo_id_single', maxSize )
     .get( '/:enketo_id', getInstance )
     .get( '/:encrypted_enketo_id_view', getInstance )
@@ -68,6 +68,10 @@ function submit( req, res, next ) {
                 } : {},
                 timeout: req.app.get( 'timeout' ) + 500
             };
+
+            // TODO: why are all headers overwritten here (X-OpenRosa-Version, Date)
+            // TODO: it looks like cookies are also overwritten, but wouldn't that break submissions to Ona?
+
             // pipe the request 
             req.pipe( request( options ) )
                 .on( 'response', orResponse => {
@@ -96,18 +100,29 @@ function submit( req, res, next ) {
 }
 
 function maxSize( req, res, next ) {
-    surveyModel.get( req.enketoId )
-        .then( survey => {
-            survey.credentials = userModel.getCredentials( req );
-            return survey;
-        } )
-        .then( communicator.getMaxSize )
-        .then( maxSize => {
-            res.json( {
-                maxSize
-            } );
-        } )
-        .catch( next );
+    if ( req.query.xformUrl ) {
+        // Non-standard way of attempting to obtain max submission size from XForm url directly
+        communicator.getMaxSize( {
+                info: {
+                    downloadUrl: req.query.xformUrl
+                }
+            } )
+            .then( maxSize => {
+                res.json( { maxSize } );
+            } )
+            .catch( next );
+    } else {
+        surveyModel.get( req.enketoId )
+            .then( survey => {
+                survey.credentials = userModel.getCredentials( req );
+                return survey;
+            } )
+            .then( communicator.getMaxSize )
+            .then( maxSize => {
+                res.json( { maxSize } );
+            } )
+            .catch( next );
+    }
 }
 
 /**
@@ -126,6 +141,9 @@ function getInstance( req, res, next ) {
                 .then( survey => {
                     // check if found instance actually belongs to the form
                     if ( utils.getOpenRosaKey( survey ) === survey.openRosaKey ) {
+                        // Change URLs of instanceAttachments to local URLs
+                        Object.keys( survey.instanceAttachments ).forEach( key => survey.instanceAttachments[ key ] = utils.toLocalMediaUrl( survey.instanceAttachments[ key ] ) );
+
                         res.json( {
                             instance: survey.instance,
                             instanceAttachments: survey.instanceAttachments

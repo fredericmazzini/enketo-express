@@ -1,15 +1,15 @@
 'use strict';
 
-require( './module/promise-by-Q' );
-require( './module/Array-from' );
-require( './module/Array-includes' );
+require( 'enketo-core/src/js/polyfills-ie11' );
+// Workaround for https://github.com/kobotoolbox/enketo-express/issues/990
+// This can probably be removed in the future. Test modal dialogs called from file input widget (when resetting).
+require( './module/dialog' );
 
 var $ = require( 'jquery' );
 var gui = require( './module/gui' );
 var controller = require( './module/controller-webform' );
 var settings = require( './module/settings' );
 var connection = require( './module/connection' );
-var Promise = require( 'lie' );
 var FormModel = require( 'enketo-core/src/js/Form-model' );
 var translator = require( './module/translator' );
 var t = translator.t;
@@ -18,8 +18,8 @@ var utils = require( './module/utils' );
 var formCache = require( './module/form-cache' );
 var appCache = require( './module/application-cache' );
 
-var $loader = $( '.form__loader' );
-var $buttons = $( '.form-header__button--print, button#validate-form, button#submit-form' );
+var $loader = $( 'body > .main-loader' );
+var $formheader = $( '.main > .paper > .form-header' );
 var survey = {
     enketoId: settings.enketoId,
     serverUrl: settings.serverUrl,
@@ -53,9 +53,8 @@ if ( settings.offline ) {
     console.log( 'App in online-only mode.' );
     translator.init( survey )
         .then( connection.getFormParts )
-        .then( translator.init )
-        .then( _addBranding )
         .then( _swapTheme )
+        .then( _addBranding )
         .then( _init )
         .then( connection.getMaximumSubmissionSize )
         .then( _updateMaxSizeSetting )
@@ -162,7 +161,6 @@ function _prepareInstance( modelStr, defaults ) {
 
     for ( var path in defaults ) {
         if ( defaults.hasOwnProperty( path ) ) {
-            // TODO full:false support still needs to be added to FormModel.js
             model = model || new FormModel( modelStr, {
                 full: false
             } );
@@ -172,6 +170,7 @@ function _prepareInstance( modelStr, defaults ) {
                 model.node( path ).setVal( defaults[ path ] );
             }
             // TODO would be good to not include nodes that weren't in the defaults parameter
+            // HOWEVER, that would also set number of repeats to 0, which may be undesired
             // TODO would be good to just pass model along instead of converting to string first
             existingInstance = model.getStr();
         }
@@ -184,7 +183,7 @@ function _init( formParts ) {
 
     return new Promise( function( resolve, reject ) {
         if ( formParts && formParts.form && formParts.model ) {
-            $loader.replaceWith( formParts.form );
+            $formheader.after( formParts.form );
             translator.localize( document.querySelector( 'form.or' ) );
             $( document ).ready( function() {
                 // TODO pass $form as first parameter?
@@ -194,8 +193,6 @@ function _init( formParts ) {
                     instanceStr: _prepareInstance( formParts.model, settings.defaults ),
                     external: formParts.externalData,
                 } ).then( function( form ) {
-
-                    form.view.$.add( $buttons ).removeClass( 'hide' );
                     $( 'head>title' ).text( utils.getTitleFromFormStr( formParts.form ) );
                     formParts.$form = form.view.$;
                     if ( settings.print ) {

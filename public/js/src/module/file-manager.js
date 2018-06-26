@@ -11,7 +11,7 @@
 
 var store = require( './store' );
 var settings = require( './settings' );
-var Promise = require( 'lie' );
+var connection = require( './connection' );
 var $ = require( 'jquery' );
 var utils = require( './utils' );
 var coreUtils = require( 'enketo-core/src/js/utils' );
@@ -46,10 +46,9 @@ function setInstanceAttachments( attachments ) {
  * as a src attribute.
  *
  * @param  {?string|Object} subject File or filename
- * @param  {?string} filename filename override
  * @return {[type]}         promise url string or rejection with Error
  */
-function getFileUrl( subject /*, filename*/ ) {
+function getFileUrl( subject ) {
     return new Promise( function( resolve, reject ) {
         if ( !subject ) {
             resolve( null );
@@ -85,6 +84,26 @@ function getFileUrl( subject /*, filename*/ ) {
             reject( new Error( 'Unknown error occurred' ) );
         }
     } );
+}
+
+/**
+ * Similar to getFileURL, except that this one is guaranteed to return an objectURL
+ * 
+ * It is meant for loading images into a canvas.
+ * 
+ * @param  {?string|Object} subject File or filename in local storage
+ * @return {[type]}         promise url string or rejection with Error
+ */
+function getObjectUrl( subject ) {
+    return getFileUrl( subject )
+        .then( function( url ) {
+            if ( /https?:\/\//.test( url ) ) {
+                return connection.getMediaFile( url ).then( function( obj ) {
+                    return URL.createObjectURL( obj.item );
+                } );
+            }
+            return url;
+        } );
 }
 
 /**
@@ -132,7 +151,6 @@ function getCurrentFiles() {
 
     return files;
 }
-
 
 /**
  * Traverses files currently stored in file input elements of open record to find a specific file.
@@ -193,6 +211,7 @@ module.exports = {
     init: init,
     setInstanceAttachments: setInstanceAttachments,
     getFileUrl: getFileUrl,
+    getObjectUrl: getObjectUrl,
     getCurrentFiles: getCurrentFiles,
     getCurrentFile: getCurrentFile,
     isTooLarge: isTooLarge,

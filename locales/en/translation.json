@@ -288,6 +288,7 @@
         "nl": "Dutch",
         "no": "Norwegian",
         "pl": "Polish",
+        "pt": "Portuguese",
         "ro": "Romanian",
         "sk": "Slovak",
         "supported": "Languages supported: ",
@@ -323,6 +324,10 @@
             "submit": "Submit",
             "username": "Username"
         }
+    },
+    "rankwidget": {
+        "clickstart": "Click to start",
+        "tapstart": "Tap to start"
     },
     "record-list": {
         "export": "Export",

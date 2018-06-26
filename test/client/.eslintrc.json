@@ -1,12 +1,14 @@
 {
     "env": {
-        "es6": false,
+        "es6": true,
         "browser": true,
         "node": false,
-        "commonjs": true
+        "commonjs": true,
+        "mocha": true
     },
     "globals": {
-        "Promise": true
+        "expect": true,
+        "sinon": true
     },
     "extends": "eslint:recommended",
     "parserOptions": {

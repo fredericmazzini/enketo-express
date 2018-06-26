@@ -6,12 +6,11 @@
 
 var support = require( 'enketo-core/src/js/support' );
 var settings = require( './settings' );
-var Promise = require( 'lie' );
 var printHelper = require( 'enketo-core/src/js/print' );
 var translator = require( './translator' );
 var t = translator.t;
 var sniffer = require( './sniffer' );
-var dialog = require( './vex.dialog.custom' );
+var vex = require( 'vex-js' );
 var $ = require( 'jquery' );
 require( './plugin' );
 
@@ -21,8 +20,9 @@ var updateStatus;
 var feedbackBar;
 var formTheme;
 
-// Customize vex.dialog.custom.js options
-dialog.defaultOptions.className = 'vex-theme-plain';
+// Customize vex
+vex.registerPlugin( require( 'vex-dialog-enketo' ) );
+vex.defaultOptions.className = 'vex-theme-plain';
 
 /**
  * Initializes the GUI module
@@ -66,9 +66,7 @@ function setEventHandlers() {
         $( 'body' ).removeClass( 'show-side-slider' );
     } );
 
-    $( '.form-header__button--print' ).on( 'click', function() {
-        printHelper.printForm( promptPrintSettings, formTheme );
-    } );
+    $( '.form-header__button--print' ).on( 'click', printForm );
 
     $( '.side-slider__toggle, .offline-enabled__queue-length' ).on( 'click', function() {
         var $body = $( 'body' );
@@ -109,18 +107,23 @@ function setEventHandlers() {
 }
 
 function swapTheme( formParts ) {
-    var theme = formParts.theme;
+    var requestedTheme = formParts.theme;
+    var $styleSheets = $( 'link[rel=stylesheet][href*=theme-]' );
+    var matches = /\/theme-([A-z]+)(\.print)?\.css/.exec( $styleSheets.eq( 0 ).attr( 'href' ) );
+
+    formTheme = matches !== null ? matches[ 1 ] : null;
+
     return new Promise( function( resolve ) {
-        if ( theme && settings.themesSupported.some( function( supportedTheme ) {
-                return theme === supportedTheme;
+        if ( requestedTheme && requestedTheme !== formTheme && settings.themesSupported.some( function( supportedTheme ) {
+                return requestedTheme === supportedTheme;
             } ) ) {
             var $replacementSheets = [];
-            var $styleSheets = $( 'link[rel=stylesheet][href*=theme-]' ).each( function() {
-                $replacementSheets.push( $( this.outerHTML.replace( /(href=.*\/theme-)[A-z]+((\.print)?\.css)/, '$1' + theme + '$2' ) ) );
+            $styleSheets.each( function() {
+                $replacementSheets.push( $( this.outerHTML.replace( /(href=.*\/theme-)[A-z]+((\.print)?\.css)/, '$1' + requestedTheme + '$2' ) ) );
             } );
-
+            console.log( 'Swapping theme to', requestedTheme );
             $replacementSheets[ 0 ].on( 'load', function() {
-                formTheme = theme;
+                formTheme = requestedTheme;
                 resolve( formParts );
             } );
 
@@ -129,7 +132,7 @@ function swapTheme( formParts ) {
             } );
 
         } else {
-            console.log( 'Theme "' + theme + '" is not supported. Keeping default theme.' );
+            console.log( 'Keeping default theme.' );
             delete formParts.theme;
             resolve( formParts );
         }
@@ -202,18 +205,16 @@ function feedback( message, duration ) {
  */
 function alert( message, heading, level, duration ) {
     level = level || 'error';
-
-    dialog.alert( {
-        message: message,
+    vex.closeAll();
+    vex.dialog.alert( {
+        unsafeMessage: message,
         title: heading || t( 'alert.default.heading' ),
         messageClassName: ( level === 'normal' ) ? '' : 'alert-box ' + level,
-        buttons: {
-            YES: {
-                text: t( 'alert.default.button' ),
-                type: 'submit',
-                className: 'btn btn-primary small'
-            }
-        },
+        buttons: [ {
+            text: t( 'alert.validationsuccess.heading' ),
+            type: 'submit',
+            className: 'btn btn-primary small'
+        } ],
         autoClose: duration,
         showCloseButton: true
     } );
@@ -238,18 +239,20 @@ function confirm( content, choices ) {
     choices = choices || {};
     choices.allowAlternativeClose = ( typeof choices.allowAlternativeClose !== 'undefined' ) ? choices.allowAlternativeClose : true;
 
-    dialog.confirm( {
-        message: errorMsg + ( message || t( 'confirm.default.msg' ) ),
+    vex.closeAll();
+    vex.dialog.confirm( {
+        unsafeMessage: errorMsg + ( message || t( 'confirm.default.msg' ) ),
         title: content.heading || t( 'confirm.default.heading' ),
-        buttons: [ {
-            text: choices.posButton || t( 'confirm.default.posButton' ),
-            type: 'submit',
-            className: 'btn btn-primary small'
-        }, {
-            text: choices.negButton || t( 'confirm.default.negButton' ),
-            type: 'button',
-            className: 'btn btn-default small'
-        } ],
+        buttons: [
+            $.extend( {}, vex.dialog.buttons.YES, {
+                text: choices.posButton || t( 'confirm.default.posButton' ),
+                className: 'btn btn-primary small'
+            } ),
+            $.extend( {}, vex.dialog.buttons.NO, {
+                text: choices.negButton || t( 'confirm.default.negButton' ),
+                className: 'btn btn-default small'
+            } )
+        ],
         callback: function( value ) {
             if ( value && typeof choices.posAction !== 'undefined' ) {
                 choices.posAction.call( value );
@@ -272,18 +275,20 @@ function prompt( content, choices, inputs ) {
     }
 
     choices = choices || {};
-    dialog.prompt( {
-        message: errorMsg + ( message || '' ),
+    vex.closeAll();
+    vex.dialog.prompt( {
+        unsafeMessage: errorMsg + ( message || '' ),
         title: content.heading || t( 'prompt.default.heading' ),
-        buttons: [ {
-            text: choices.posButton || t( 'confirm.default.posButton' ),
-            type: 'submit',
-            className: 'btn btn-primary small'
-        }, {
-            text: choices.negButton || t( 'confirm.default.negButton' ),
-            type: 'button',
-            className: 'btn btn-default small'
-        } ],
+        buttons: [
+            $.extend( {}, vex.dialog.buttons.YES, {
+                text: choices.posButton || t( 'confirm.default.posButton' ),
+                className: 'btn btn-primary small'
+            } ),
+            $.extend( {}, vex.dialog.buttons.NO, {
+                text: choices.negButton || t( 'confirm.default.negButton' ),
+                className: 'btn btn-default small'
+            } )
+        ],
         input: inputs,
         callback: function( value ) {
             if ( value && typeof choices.posAction !== 'undefined' ) {
@@ -389,45 +394,107 @@ function _getHomeScreenGuidanceObj( imageClass1, imageClass2 ) {
 }
 
 /**
- * Prompts for print settings
- *
- * @param  {*} ignore This is here for historic reasons but is ignored
- * @param  {{posAction: Function, negAction: Function, afterAction: Function}} actions Object with actions
+ * Prompts for print settings (for Grid Theme) and prints from the regular view of the form.
  */
-function promptPrintSettings( ignore, actions ) {
+function printForm() {
+    var components = getPrintDialogComponents();
     var texts = {
-        heading: t( 'confirm.print.heading' ),
-        msg: t( 'confirm.print.msg' )
+        heading: components.heading,
+        msg: components.msg
     };
     var options = {
-        posButton: t( 'confirm.print.posButton' ),
-        posAction: actions.posAction,
-        negButton: t( 'alert.default.button' ),
-        negAction: actions.negAction,
-        afterAction: actions.afterAction
+        posButton: components.posButton,
+        posAction: components.posAction,
+        negButton: components.negButton,
     };
-    var inputs = '<fieldset><legend>' + t( 'confirm.print.psize' ) + '</legend>' +
-        '<label><input name="format" type="radio" value="A4" required checked/><span>' + t( 'confirm.print.a4' ) + '</span></label>' +
-        '<label><input name="format" type="radio" value="Letter" required/><span>' + t( 'confirm.print.letter' ) + '</span></label>' +
-        '</fieldset>' +
-        '<fieldset><legend>' + t( 'confirm.print.orientation' ) + '</legend>' +
-        '<label><input name="orientation" type="radio" value="portrait" required checked/><span>' + t( 'confirm.print.portrait' ) + '</span></label>' +
-        '<label><input name="orientation" type="radio" value="landscape" required/><span>' + t( 'confirm.print.landscape' ) + '</span></label>' +
-        '</fieldset>' +
-        '<p class="alert-box info" >' + t( 'confirm.print.reminder' ) + '</p>';
+    var inputs = components.gridInputs + components.gridWarning;
 
-    prompt( texts, options, inputs );
+    return new Promise( function( resolve ) {
+        if ( formTheme === 'grid' || ( !formTheme && printHelper.isGrid() ) ) {
+            options.afterAction = resolve;
+            prompt( texts, options, inputs );
+        } else {
+            window.print();
+            resolve();
+        }
+    } );
 }
 
+/**
+ * Separated this to allow using parts in custom print dialogs.
+ * 
+ */
+function getPrintDialogComponents() {
+    // used function because i18next needs to be initalized for t() to work
+    return {
+        heading: t( 'confirm.print.heading' ),
+        msg: t( 'confirm.print.msg' ),
+        posButton: t( 'confirm.print.posButton' ),
+        posAction: function( format ) {
+            var swapped = printHelper.styleToAll();
+            printHelper.fixGrid( format )
+                .then( window.print )
+                .catch( console.error )
+                .then( function() {
+                    if ( swapped ) {
+                        return new Promise( function( resolve ) {
+                            setTimeout( function() {
+                                printHelper.styleReset();
+                                resolve();
+                            }, 500 );
+                        } );
+                    }
+                } );
+        },
+        negButton: t( 'alert.default.button' ),
+        gridInputs: '<fieldset><legend>' + t( 'confirm.print.psize' ) + '</legend>' +
+            '<label><input name="format" type="radio" value="A4" required checked/><span>' + t( 'confirm.print.a4' ) + '</span></label>' +
+            '<label><input name="format" type="radio" value="Letter" required/><span>' + t( 'confirm.print.letter' ) + '</span></label>' +
+            '</fieldset>' +
+            '<fieldset><legend>' + t( 'confirm.print.orientation' ) + '</legend>' +
+            '<label><input name="orientation" type="radio" value="portrait" required checked/><span>' + t( 'confirm.print.portrait' ) + '</span></label>' +
+            '<label><input name="orientation" type="radio" value="landscape" required/><span>' + t( 'confirm.print.landscape' ) + '</span></label>' +
+            '</fieldset>',
+        gridWarning: '<p class="alert-box info" >' + t( 'confirm.print.reminder' ) + '</p>',
+    };
+}
+
+/**
+ * This is function is used by PDF creation functionality from a special print view of the form..
+ */
 function applyPrintStyle() {
-    if ( formTheme === 'grid' || ( !formTheme && printHelper.isGrid() ) ) {
-        var paper = { format: settings.format, landscape: settings.landscape, scale: settings.scale, margin: settings.margin };
-        printHelper.fixGrid( paper );
-    }
-    // allow some time for repainting
-    setTimeout( function() {
-        window.printReady = true;
-    }, 300 );
+    imagesLoaded()
+        .then( function() {
+            if ( formTheme === 'grid' || ( !formTheme && printHelper.isGrid() ) ) {
+                var paper = { format: settings.format, landscape: settings.landscape, scale: settings.scale, margin: settings.margin };
+                return printHelper.fixGrid( paper );
+            }
+        } )
+        .then( function() {
+            // allow some time for repainting
+            return new Promise( function( resolve ) {
+                setTimeout( resolve, 300 );
+            } );
+        } )
+        .then( function() {
+            window.printReady = true;
+        } )
+        .catch( console.error );
+}
+
+function imagesLoaded() {
+    return new Promise( function( resolve ) {
+        var images = Array.prototype.slice.call( document.images );
+        var interval = setInterval( function() {
+            images = images.filter( function( image ) {
+                return !image.complete;
+            } );
+            if ( images.length === 0 ) {
+                clearInterval( interval );
+                resolve();
+            }
+        }, 150 );
+    } );
 }
 
 function alertCacheUnsupported() {
@@ -516,5 +583,7 @@ module.exports = {
     alertLoadErrors: alertLoadErrors,
     alertCacheUnsupported: alertCacheUnsupported,
     getErrorResponseMsg: getErrorResponseMsg,
-    applyPrintStyle: applyPrintStyle
+    applyPrintStyle: applyPrintStyle,
+    getPrintDialogComponents: getPrintDialogComponents,
+    printForm: printForm,
 };
